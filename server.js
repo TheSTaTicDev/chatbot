@@ -4,7 +4,7 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 const OPENAI_API_KEY = 'sk-proj-j7EGiJnuUDW6YhrnAKAST3BlbkFJ61cHwObLUBNO1FLiFTXJ';
-const APEX_API_URL = 'https://apex.oracle.com/ords/WKSP_STATIC/new_api/user_roles/user/';
+const APEX_API_URL = 'https://apex.oracle.com/pls/apex/new_api/user_roles/user/';
 
 app.use(express.json());
 
