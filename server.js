@@ -4,8 +4,10 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-const APEX_API_BASE_URL = 'https://apex.oracle.com/pls/apex/new_api/user_roles/user/';
 
+console.log('OpenAI API Key:', OPENAI_API_KEY);  // Add this line to log the API key
+
+const APEX_API_BASE_URL = "https://apex.oracle.com/pls/apex/new_api/user_roles/user/";
 
 app.use(express.json());
 
