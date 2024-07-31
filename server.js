@@ -3,7 +3,7 @@ const https = require('https');
 const app = express();
 const port = process.env.PORT || 3000;
 
-const OPENAI_API_KEY = 'sk-proj-2sLN8UtcWFTPLu5ZKwrVT3BlbkFJBmXDSmR17EcleEsxNYpB';
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const APEX_API_BASE_URL = 'https://apex.oracle.com/pls/apex/new_api/user_roles/user/';
 
 
