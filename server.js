@@ -30,14 +30,14 @@ app.post('/get-role', async (req, res) => {
     }
 
     try {
-        console.log('Fetching role from APEX API');
+        console.log('Accessing APEX API');
         const roleResponse = await axios.get(`${APEX_API_URL}${userEmail}`);
         const userRoleData = roleResponse.data.items[0];
 
         if (!userRoleData) {
             return res.json({ message: 'User not found or no role assigned.' });
         }
-
+        console.log('User found, fetching details...');
         const roleMessage = `Email: ${userRoleData.email}\nRole: ${userRoleData.r_name}\nDescription: ${userRoleData.r_desc}`;
 
         console.log('Fetching GPT response');
