@@ -53,7 +53,7 @@ app.post('/get-role', (req, res) => {
 
             console.log('Fetching GPT response');
             const postData = JSON.stringify({
-                model: 'gpt-3.5-turbo',
+                model: 'gpt-3.5-turbo-1106',
                 prompt: `Generate a friendly message for the following user role data: ${roleMessage}`,
                 max_tokens: 150
             });
