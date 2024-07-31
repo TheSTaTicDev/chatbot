@@ -3,8 +3,8 @@ const axios = require('axios');
 const app = express();
 const port = process.env.PORT || 3000;
 
-const OPENAI_API_KEY = 'YOUR_OPENAI_API_KEY'; // Replace with your OpenAI API key
-const APEX_API_URL = 'http://your-apex-server/ords/your_schema/new_api/user_roles/user/'; // Replace with your Oracle APEX RESTful Web Service URL
+const OPENAI_API_KEY = 'sk-proj-j7EGiJnuUDW6YhrnAKAST3BlbkFJ61cHwObLUBNO1FLiFTXJ'; // Replace with your OpenAI API key
+const APEX_API_URL = 'http://apex.oracle.com/ords/WKSP_STATIC/new_api/user_roles/user/'; // Replace with your Oracle APEX RESTful Web Service URL
 
 app.use(express.json());
 
