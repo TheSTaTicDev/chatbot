@@ -4,7 +4,7 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 const OPENAI_API_KEY = 'sk-proj-j7EGiJnuUDW6YhrnAKAST3BlbkFJ61cHwObLUBNO1FLiFTXJ'; // Replace with your OpenAI API key
-const APEX_API_URL = 'http://apex.oracle.com/ords/WKSP_STATIC/new_api/user_roles/user/'; // Replace with your Oracle APEX RESTful Web Service URL
+const APEX_API_URL = 'https://apex.oracle.com/ords/WKSP_STATIC/new_api/user_roles/user/'; // Replace with your Oracle APEX RESTful Web Service URL
 
 app.use(express.json());
 
@@ -41,8 +41,8 @@ app.post('/get-role', async (req, res) => {
         const friendlyMessage = gptResponse.data.choices[0].text.trim();
         res.json({ message: friendlyMessage });
     } catch (error) {
-        console.error(error);
-        res.status(500).send('An error occurred while processing your request');
+        console.error('Error occurred:', error); // Add logging for debugging
+        res.status(500).json({ message: 'An internal error occurred. Please try again later.' });
     }
 });
 
