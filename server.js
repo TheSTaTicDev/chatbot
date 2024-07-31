@@ -38,7 +38,7 @@ app.post('/get-role', async (req, res) => {
             return res.json({ message: 'User not found or no role assigned.' });
         }
 
-        const roleMessage = `Email: ${userRoleData.email}\nRole: ${userRoleData.role_name}\nDescription: ${userRoleData.description}`;
+        const roleMessage = `Email: ${userRoleData.email}\nRole: ${userRoleData.r_name}\nDescription: ${userRoleData.r_desc}`;
 
         console.log('Fetching GPT response');
         const gptResponse = await axios.post('https://api.openai.com/v1/completions', {
