@@ -75,9 +75,15 @@ app.post('/get-role', (req, res) => {
                 });
 
                 gptRes.on('end', () => {
+                    console.log('GPT API response:', gptData);
                     const gptResponse = JSON.parse(gptData);
-                    const friendlyMessage = gptResponse.choices[0].text.trim();
-                    res.json({ message: friendlyMessage });
+
+                    if (gptResponse.choices && gptResponse.choices.length > 0) {
+                        const friendlyMessage = gptResponse.choices[0].text.trim();
+                        res.json({ message: friendlyMessage });
+                    } else {
+                        res.status(500).json({ message: 'An error occurred with the OpenAI API response.' });
+                    }
                 });
             });
 
