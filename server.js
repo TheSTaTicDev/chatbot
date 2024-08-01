@@ -23,41 +23,48 @@ app.post('/get-role', async (req, res) => {
 
                 // A chunk of data has been received.
                 resp.on('data', (chunk) => {
-                    console.log('Received data chunk:', chunk);
+                    console.log('Received data chunk:', chunk.toString());
                     data += chunk;
                 });
 
                 // The whole response has been received.
                 resp.on('end', async () => {
                     console.log('Response from APEX API:', data);
-                    const roleData = JSON.parse(data);
-                    const role = roleData.r_name;
-                    console.log(`Role for user ${userEmail}: ${role}`);
 
-                    const prompt = `User with email ${userEmail} is asking: ${message}. The role is: ${role}`;
-                    console.log('Prompt for AI:', prompt);
+                    try {
+                        const roleData = JSON.parse(data);
+                        console.log('roleData:', roleData);
+                        const role = roleData.r_name;
+                        console.log(`Role for user ${userEmail}: ${role}`);
 
-                    let fullResponse = '';
-                    for await (const chunk of hfInference.chatCompletionStream({
-                        model: "microsoft/DialoGPT-medium",
-                        messages: [{ role: "user", content: prompt }],
-                        max_tokens: 500,
-                    })) {
-                        fullResponse += chunk.choices[0]?.delta?.content || "";
+                        const prompt = `User with email ${userEmail} is asking: ${message}. The role is: ${role}`;
+                        console.log('Prompt for AI:', prompt);
+
+                        let fullResponse = '';
+                        for await (const chunk of hfInference.chatCompletionStream({
+                            model: "microsoft/DialoGPT-medium",
+                            messages: [{ role: "user", content: prompt }],
+                            max_tokens: 500,
+                        })) {
+                            fullResponse += chunk.choices[0]?.delta?.content || "";
+                        }
+
+                        console.log('Response from AI:', fullResponse);
+                        res.json({ response: fullResponse });
+                    } catch (parseError) {
+                        console.error('Error parsing JSON from APEX API:', parseError);
+                        res.status(500).json({ error: 'Failed to parse role data' });
                     }
-
-                    console.log('Response from AI:', fullResponse);
-                    res.json({ response: fullResponse });
                 });
 
             }).on("error", (err) => {
                 console.error("Error fetching role from APEX API:", err.message);
-                res.status(500).json({ error: 'Failed to fetch role or generate response' });
+                res.status(500).json({ error: 'Failed to fetch role from APEX API' });
             });
 
         } catch (error) {
             console.error('Error in processing request:', error.message);
-            res.status(500).json({ error: 'Failed to fetch role or generate response' });
+            res.status(500).json({ error: 'Failed to process request' });
         }
     } else {
         const defaultMessage = 'This chatbot only responds to queries about your role.';
