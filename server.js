@@ -33,8 +33,7 @@ app.post('/get-role', async (req, res) => {
 
                     try {
                         const roleData = JSON.parse(data);
-                        console.log('roleData:', roleData);
-                        const role = roleData.r_name;
+                        const role = roleData.items[0]?.r_name; // Extracting the role name
                         console.log(`Role for user ${userEmail}: ${role}`);
 
                         const prompt = `User with email ${userEmail} is asking: ${message}. The role is: ${role}`;
