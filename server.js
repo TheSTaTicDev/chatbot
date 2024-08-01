@@ -39,15 +39,13 @@ app.post('/get-role', async (req, res) => {
                         const prompt = `User with email ${userEmail} is asking: ${message}. The role is: ${role}`;
                         console.log('Prompt for AI:', prompt);
 
-                        let fullResponse = '';
-                        for await (const chunk of hfInference.chatCompletionStream({
+                        const response = await hfInference.textGeneration({
                             model: "microsoft/DialoGPT-medium",
-                            messages: [{ role: "user", content: prompt }],
-                            max_tokens: 500,
-                        })) {
-                            fullResponse += chunk.choices[0]?.delta?.content || "";
-                        }
+                            inputs: prompt,
+                            parameters: { max_new_tokens: 50 }
+                        });
 
+                        const fullResponse = response.generated_text;
                         console.log('Response from AI:', fullResponse);
                         res.json({ response: fullResponse });
                     } catch (parseError) {
