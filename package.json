@@ -1,13 +1,13 @@
 {
-    "name": "chatbot-server",
+    "name": "your-app-name",
     "version": "1.0.0",
     "main": "server.js",
     "scripts": {
         "start": "node server.js"
     },
     "dependencies": {
+        "body-parser": "^1.19.0",
         "express": "^4.17.1",
-        "axios": "^0.21.1",
-        "@huggingface/inference": "^1.0.0"
+        "request": "^2.88.2"
     }
 }
