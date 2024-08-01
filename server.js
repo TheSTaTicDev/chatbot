@@ -1,108 +1,44 @@
 const express = require('express');
-const https = require('https');
+const axios = require('axios');
+const { InferenceSession } = require('@huggingface/inference');
+
 const app = express();
 const port = process.env.PORT || 3000;
 
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-
-console.log('OpenAI API Key:', OPENAI_API_KEY);  // Add this line to log the API key
-
-const APEX_API_BASE_URL = "https://apex.oracle.com/pls/apex/new_api/user_roles/user/";
-
 app.use(express.json());
 
-function isRoleQuery(message) {
-    if (typeof message !== 'string') {
-        return false;
-    }
-    const roleKeywords = ['role', 'my role', 'what is my role', 'role in system', 'role info'];
-    return roleKeywords.some(keyword => message.toLowerCase().includes(keyword));
-}
+const model = new InferenceSession({
+    model: 'microsoft/DialoGPT-medium'
+});
 
-app.post('/get-role', (req, res) => {
+app.post('/get-role', async (req, res) => {
     const { userEmail, message } = req.body;
 
-    console.log('Received request:', req.body);
+    if (message.toLowerCase().includes('my role')) {
+        console.log('Fetching role from APEX API');
+        try {
+            const apexApiUrl = `https://apex.oracle.com/pls/apex/new_api/user_roles/user/${userEmail}`;
+            const response = await axios.get(apexApiUrl);
+            const roleData = response.data;
+            const role = roleData.role;
 
-    if (!message) {
-        return res.status(400).json({ message: 'Message field is required.' });
+            const prompt = `User with email ${userEmail} is asking: ${message}. The role is: ${role}`;
+
+            const chatResponse = await model.run({
+                inputs: prompt
+            });
+
+            const friendlyMessage = chatResponse.text.trim();
+            res.json({ response: friendlyMessage });
+        } catch (error) {
+            console.error('Error fetching role or generating response:', error.message);
+            res.status(500).json({ error: 'Failed to fetch role or generate response' });
+        }
+    } else {
+        res.json({ response: 'This chatbot only responds to queries about your role.' });
     }
-
-    if (!isRoleQuery(message)) {
-        return res.json({ message: 'This chatbot only responds to queries about your role.' });
-    }
-
-    console.log('Fetching role from APEX API for email:', userEmail);
-    https.get(`${APEX_API_BASE_URL}${userEmail}`, (roleResponse) => {
-        let data = '';
-
-        roleResponse.on('data', (chunk) => {
-            data += chunk;
-        });
-
-        roleResponse.on('end', () => {
-            console.log('Role API response:', data);
-            const roleData = JSON.parse(data);
-            const userRoleData = roleData.items[0];
-
-            if (!userRoleData) {
-                return res.json({ message: 'User not found or no role assigned.' });
-            }
-
-            const roleMessage = `Email: ${userRoleData.email}\nRole: ${userRoleData.role_name}\nDescription: ${userRoleData.description}`;
-
-            console.log('Fetching GPT response');
-            const postData = JSON.stringify({
-                model: 'gpt-3.5-turbo-1106',
-                prompt: `Generate a friendly message for the following user role data: ${roleMessage}`,
-                max_tokens: 150
-            });
-
-            const options = {
-                hostname: 'api.openai.com',
-                path: '/v1/completions',
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${OPENAI_API_KEY}`,
-                    'Content-Length': postData.length
-                }
-            };
-
-            const gptReq = https.request(options, (gptRes) => {
-                let gptData = '';
-
-                gptRes.on('data', (chunk) => {
-                    gptData += chunk;
-                });
-
-                gptRes.on('end', () => {
-                    console.log('GPT API response:', gptData);
-                    const gptResponse = JSON.parse(gptData);
-
-                    if (gptResponse.choices && gptResponse.choices.length > 0) {
-                        const friendlyMessage = gptResponse.choices[0].text.trim();
-                        res.json({ message: friendlyMessage });
-                    } else {
-                        res.status(500).json({ message: 'An error occurred with the OpenAI API response.' });
-                    }
-                });
-            });
-
-            gptReq.on('error', (e) => {
-                console.error('Error occurred:', e);
-                res.status(500).json({ message: 'An internal error occurred. Please try again later.' });
-            });
-
-            gptReq.write(postData);
-            gptReq.end();
-        });
-    }).on('error', (e) => {
-        console.error('Error occurred:', e);
-        res.status(500).json({ message: 'An internal error occurred. Please try again later.' });
-    });
 });
 
 app.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}`);
+    console.log(`Server running on port ${port}`);
 });
