@@ -33,18 +33,14 @@ app.post('/get-role', async (req, res) => {
 
                             const prompt = `User with email ${userEmail} is asking: ${message}. The role is: ${role}`;
 
-                            // Using chatCompletionStream
-                            const response = await hfInference.chatCompletionStream({
+                            // Using textGeneration as an alternative
+                            const response = await hfInference.textGeneration({
                                 model: "mistralai/Mistral-Nemo-Instruct-2407",
-                                messages: [{ role: "user", content: prompt }],
-                                max_tokens: 500
+                                inputs: prompt,
+                                parameters: { max_new_tokens: 500 }
                             });
 
-                            let fullResponse = '';
-                            for await (const chunk of response) {
-                                fullResponse += chunk.choices[0]?.delta?.content || "";
-                            }
-
+                            const fullResponse = response.generated_text;
                             res.json({ response: fullResponse });
                         } catch (parseError) {
                             console.error('Error parsing JSON from APEX API:', parseError);
