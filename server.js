@@ -10,7 +10,6 @@ const hfInference = new HfInference("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");
 app.use(express.json()); // This middleware parses JSON payloads
 
 app.post('/get-role', async (req, res) => {
-    console.log(`REQ: `,req);
     const { userEmail, message } = req.body;
     console.log(`Received request - userEmail: ${userEmail}, message: ${message}`);
 
@@ -34,6 +33,7 @@ app.post('/get-role', async (req, res) => {
 
                             const prompt = `User with email ${userEmail} is asking: ${message}. The role is: ${role}`;
 
+                            // Using chatCompletionStream
                             const response = await hfInference.chatCompletionStream({
                                 model: "mistralai/Mistral-Nemo-Instruct-2407",
                                 messages: [{ role: "user", content: prompt }],
