@@ -13,7 +13,7 @@ app.post('/get-role', async (req, res) => {
     const { userEmail, message } = req.body;
     console.log(`Received request - userEmail: ${userEmail}, message: ${message}`);
 
-    if (message.toLowerCase().includes('role')) {
+    if (message.toLowerCase().includes('my role')) {
         console.log('Fetching role from APEX API');
         try {
             const apexApiUrl = `https://apex.oracle.com/pls/apex/new_api/user_roles/user/${userEmail}`;
@@ -39,18 +39,16 @@ app.post('/get-role', async (req, res) => {
                         const prompt = `Provide a friendly message to the User with email ${userEmail} is asking:${message}. The role is: ${role}. Do not greet with name just inform them about their role in the app.`;
                         console.log('Prompt for AI:', prompt);
 
-                        let aiResponse = '';
-
-                        for await (const chunk of hfInference.chatCompletionStream({
+                        // Using HfInference to generate text
+                        const response = await hfInference.textGeneration({
                             model: "mistralai/Mistral-Nemo-Instruct-2407",
-                            messages: [{ role: "user", content: prompt }],
-                            max_tokens: 500,
-                        })) {
-                            aiResponse += chunk.choices[0]?.delta?.content || "";
-                        }
+                            inputs: prompt,
+                            parameters: { max_new_tokens: 50 }
+                        });
 
-                        console.log('Response from AI:', aiResponse);
-                        res.json({ response: aiResponse });
+                        const fullResponse = response.generated_text;
+                        console.log('Response from AI:', fullResponse);
+                        res.json({ response: fullResponse });
                     } catch (parseError) {
                         console.error('Error parsing JSON from APEX API:', parseError);
                         res.status(500).json({ error: 'Failed to parse role data' });
