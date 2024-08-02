@@ -1,14 +1,37 @@
 const express = require('express');
 const https = require('https');
-const { AutoTokenizer, AutoModelForCausalLM } = require('@huggingface/transformers');
+const fetch = require('node-fetch'); // Ensure this is installed
 
 const app = express();
 const port = process.env.PORT || 3000;
 
-const tokenizer = AutoTokenizer.from_pretrained("google/gemma-2b");
-const model = AutoModelForCausalLM.from_pretrained("google/gemma-2-2b");
+const hfApiUrl = "https://api-inference.huggingface.co/models/google/gemma-2-2b";
+const hfApiKey = "Bearer hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"; // Replace with your Hugging Face API key
 
 app.use(express.json()); // This middleware parses JSON payloads
+
+async function query(data) {
+    try {
+        const response = await fetch(hfApiUrl, {
+            headers: {
+                "Authorization": hfApiKey,
+                "Content-Type": "application/json",
+            },
+            method: "POST",
+            body: JSON.stringify(data),
+        });
+
+        if (!response.ok) {
+            throw new Error(`Hugging Face API request failed with status ${response.status}: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        return result;
+    } catch (error) {
+        console.error('Error querying Hugging Face API:', error);
+        throw error;
+    }
+}
 
 app.post('/get-role', async (req, res) => {
     const { userEmail, message } = req.body;
@@ -32,12 +55,17 @@ app.post('/get-role', async (req, res) => {
                             const roleData = JSON.parse(data);
                             const role = roleData.items[0]?.r_name; // Extracting the role name
 
+                            if (!role) {
+                                throw new Error('Role not found in APEX API response');
+                            }
+
                             const prompt = `User with email ${userEmail} is asking: ${message}. The role is: ${role}`;
-                            const inputs = tokenizer(prompt, { return_tensors: "pt" });
+                            console.log(`Generated prompt: ${prompt}`);
 
-                            const output = await model.generate(inputs.input_ids, { max_new_tokens: 100 });
-                            const fullResponse = tokenizer.decode(output[0]);
+                            const response = await query({ inputs: prompt });
+                            const fullResponse = response.generated_text;
 
+                            console.log(`Received response from Hugging Face API: ${fullResponse}`);
                             res.json({ response: fullResponse });
                         } catch (parseError) {
                             console.error('Error parsing JSON from APEX API:', parseError);
@@ -56,9 +84,11 @@ app.post('/get-role', async (req, res) => {
             }
         } else {
             const defaultMessage = 'This chatbot only responds to queries about your role.';
+            console.log(`Default message: ${defaultMessage}`);
             res.json({ response: defaultMessage });
         }
     } else {
+        console.error('Invalid request payload');
         res.status(400).json({ error: 'Invalid request payload' });
     }
 });
