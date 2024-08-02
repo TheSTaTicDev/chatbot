@@ -1,86 +1,65 @@
 const express = require('express');
 const https = require('https');
-const { HfInference } = require('@huggingface/inference');
+const { AutoTokenizer, AutoModelForCausalLM } = require('@huggingface/transformers');
 
 const app = express();
 const port = process.env.PORT || 3000;
 
-const hfInference = new HfInference("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");
+const tokenizer = AutoTokenizer.from_pretrained("google/gemma-2b");
+const model = AutoModelForCausalLM.from_pretrained("google/gemma-2-2b");
 
-app.use(express.json()); // Middleware to parse JSON payloads
+app.use(express.json()); // This middleware parses JSON payloads
 
 app.post('/get-role', async (req, res) => {
     const { userEmail, message } = req.body;
     console.log(`Received request - userEmail: ${userEmail}, message: ${message}`);
 
-    if (!userEmail || !message) {
-        console.error('Invalid request payload: Missing userEmail or message');
-        return res.status(400).json({ error: 'Invalid request payload' });
-    }
-
-    if (message.toLowerCase().includes('role')) {
-        console.log('Fetching role from APEX API');
-        try {
-            const apexApiUrl = `https://apex.oracle.com/pls/apex/new_api/user_roles/user/${userEmail}`;
-            console.log(`APEX API URL: ${apexApiUrl}`);
-            
-            https.get(apexApiUrl, (resp) => {
-                let data = '';
+    if (userEmail && message) {
+        if (message.toLowerCase().includes('role')) {
+            console.log('Fetching role from APEX API');
+            try {
+                const apexApiUrl = `https://apex.oracle.com/pls/apex/new_api/user_roles/user/${userEmail}`;
                 
-                resp.on('data', (chunk) => {
-                    console.log('Received data chunk from APEX API:', chunk.toString());
-                    data += chunk;
-                });
+                https.get(apexApiUrl, (resp) => {
+                    let data = '';
 
-                resp.on('end', async () => {
-                    console.log('Completed receiving data from APEX API');
-                    try {
-                        const roleData = JSON.parse(data);
-                        console.log('Parsed role data:', roleData);
+                    resp.on('data', (chunk) => {
+                        data += chunk;
+                    });
 
-                        const role = roleData.items[0]?.r_name; // Extracting the role name
-                        if (!role) {
-                            console.error('Role data not found for the user:', userEmail);
-                            return res.status(404).json({ error: 'Role not found' });
-                        }
-
-                        const prompt = `User with email ${userEmail} is asking: ${message}. The role is: ${role}`;
-                        console.log('Prompt for AI:', prompt);
-
-                        // Using textGeneration as an alternative
+                    resp.on('end', async () => {
                         try {
-                            const response = await hfInference.textGeneration({
-                                model: "mistralai/Mistral-Nemo-Instruct-2407",
-                                inputs: prompt,
-                                parameters: { max_new_tokens: 500 }
-                            });
+                            const roleData = JSON.parse(data);
+                            const role = roleData.items[0]?.r_name; // Extracting the role name
 
-                            const fullResponse = response.generated_text;
-                            console.log('Response from AI:', fullResponse);
+                            const prompt = `User with email ${userEmail} is asking: ${message}. The role is: ${role}`;
+                            const inputs = tokenizer(prompt, { return_tensors: "pt" });
+
+                            const output = await model.generate(inputs.input_ids, { max_new_tokens: 100 });
+                            const fullResponse = tokenizer.decode(output[0]);
+
                             res.json({ response: fullResponse });
-                        } catch (aiError) {
-                            console.error('Error calling Hugging Face AI model:', aiError);
-                            res.status(500).json({ error: 'Failed to get response from AI model' });
+                        } catch (parseError) {
+                            console.error('Error parsing JSON from APEX API:', parseError);
+                            res.status(500).json({ error: 'Failed to parse role data' });
                         }
-                    } catch (parseError) {
-                        console.error('Error parsing JSON from APEX API:', parseError);
-                        res.status(500).json({ error: 'Failed to parse role data' });
-                    }
+                    });
+
+                }).on("error", (err) => {
+                    console.error("Error fetching role from APEX API:", err.message);
+                    res.status(500).json({ error: 'Failed to fetch role from APEX API' });
                 });
 
-            }).on("error", (err) => {
-                console.error("Error fetching role from APEX API:", err.message);
-                res.status(500).json({ error: 'Failed to fetch role from APEX API' });
-            });
-
-        } catch (error) {
-            console.error('Error in processing request:', error.message);
-            res.status(500).json({ error: 'Failed to process request' });
+            } catch (error) {
+                console.error('Error in processing request:', error.message);
+                res.status(500).json({ error: 'Failed to process request' });
+            }
+        } else {
+            const defaultMessage = 'This chatbot only responds to queries about your role.';
+            res.json({ response: defaultMessage });
         }
     } else {
-        const defaultMessage = 'This chatbot only responds to queries about your role.';
-        console.log('Non-role query received:', message);
-        res.json({ response: defaultMessage });
+        res.status(400).json({ error: 'Invalid request payload' });
     }
 });
 
