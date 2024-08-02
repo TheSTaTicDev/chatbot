@@ -10,6 +10,7 @@ const hfInference = new HfInference("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");
 app.use(express.json()); // This middleware parses JSON payloads
 
 app.post('/get-role', async (req, res) => {
+    console.log(`REQ: `,req);
     const { userEmail, message } = req.body;
     console.log(`Received request - userEmail: ${userEmail}, message: ${message}`);
 
