@@ -48,7 +48,7 @@ app.post('/get-role', async (req, res) => {
 
                         // Using textGeneration as an alternative
                         try {
-                            const response = await hf.questionAnswering({
+                            const response = await hfInference.questionAnswering({
                                    model: 'deepset/roberta-base-squad2',
                                    inputs: {
                                    question: 'What is my role?',
