@@ -1,12 +1,17 @@
 {
-    "name": "chatbot-server",
-    "version": "1.0.0",
-    "main": "server.js",
-    "scripts": {
-        "start": "node server.js"
-    },
-    "dependencies": {
-        "express": "^4.17.1",
-        "@huggingface/inference": "^1.0.0"
-    }
+  "name": "apex-chatbot",
+  "version": "1.0.0",
+  "description": "Node.js server for Oracle APEX chatbot using Hugging Face Gemma-2b model",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "^4.30.0",
+    "express": "^4.18.2",
+    "https": "^1.0.0",
+    "body-parser": "^1.20.2"
+  },
+  "author": "",
+  "license": "ISC"
 }
