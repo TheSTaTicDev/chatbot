@@ -13,7 +13,7 @@ app.post('/get-role', async (req, res) => {
     const { userEmail, message } = req.body;
     console.log(`Received request - userEmail: ${userEmail}, message: ${message}`);
 
-    if (message.toLowerCase().includes('my role')) {
+    if (message.toLowerCase().includes('role')) {
         console.log('Fetching role from APEX API');
         try {
             const apexApiUrl = `https://apex.oracle.com/pls/apex/new_api/user_roles/user/${userEmail}`;
@@ -36,18 +36,21 @@ app.post('/get-role', async (req, res) => {
                         const role = roleData.items[0]?.r_name; // Extracting the role name
                         console.log(`Role for user ${userEmail}: ${role}`);
 
-                        const prompt = `User with email ${userEmail} is asking: ${message}. The role is: ${role}`;
+                        const prompt = `Provide a friendly message to the User with email ${userEmail} is asking:${message}. The role is: ${role}. Do not greet with name just inform them about their role in the app.`;
                         console.log('Prompt for AI:', prompt);
 
-                        const response = await hfInference.textGeneration({
-                            model: "microsoft/DialoGPT-medium",
-                            inputs: prompt,
-                            parameters: { max_new_tokens: 50 }
-                        });
+                        let aiResponse = '';
 
-                        const fullResponse = response.generated_text;
-                        console.log('Response from AI:', fullResponse);
-                        res.json({ response: fullResponse });
+                        for await (const chunk of hfInference.chatCompletionStream({
+                            model: "mistralai/Mistral-Nemo-Instruct-2407",
+                            messages: [{ role: "user", content: prompt }],
+                            max_tokens: 500,
+                        })) {
+                            aiResponse += chunk.choices[0]?.delta?.content || "";
+                        }
+
+                        console.log('Response from AI:', aiResponse);
+                        res.json({ response: aiResponse });
                     } catch (parseError) {
                         console.error('Error parsing JSON from APEX API:', parseError);
                         res.status(500).json({ error: 'Failed to parse role data' });
