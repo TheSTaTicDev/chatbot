@@ -6,7 +6,7 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 const hfApiUrl = "https://api-inference.huggingface.co/models/google/gemma-2-2b";
-const hfApiKey = "Bearer hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"; // Replace with your Hugging Face API key
+const hfApiKey = "Bearer PRacYXZxrVezoLRauaKdbYogWVvJJkeFUk"; // Replace with your Hugging Face API key
 
 app.use(express.json()); // This middleware parses JSON payloads
 
