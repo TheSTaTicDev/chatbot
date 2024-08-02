@@ -10,8 +10,10 @@ const hfInference = new HfInference("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");
 app.use(express.json());
 
 app.post('/get-role', async (req, res) => {
+    console.log('Received request body:', req.body);
+
     const { userEmail, message } = req.body;
-    console.log(`Received request - userEmail: ${userEmail}, message: ${message}`);
+    console.log(`Extracted - userEmail: ${userEmail}, message: ${message}`);
 
     if (!userEmail || !message) {
         console.error('Missing userEmail or message in request body');
@@ -22,35 +24,35 @@ app.post('/get-role', async (req, res) => {
         console.log('Fetching role from APEX API');
         try {
             const apexApiUrl = `https://apex.oracle.com/pls/apex/new_api/user_roles/user/${userEmail}`;
-            
+
             https.get(apexApiUrl, (resp) => {
                 let data = '';
 
-                // A chunk of data has been received.
                 resp.on('data', (chunk) => {
                     console.log('Received data chunk:', chunk.toString());
                     data += chunk;
                 });
 
-                // The whole response has been received.
                 resp.on('end', async () => {
                     console.log('Response from APEX API:', data);
 
                     try {
                         const roleData = JSON.parse(data);
-                        const role = roleData.items[0]?.r_name; // Extracting the role name
+                        const role = roleData.items[0]?.r_name;
                         console.log(`Role for user ${userEmail}: ${role}`);
 
                         const prompt = `User with email ${userEmail} is asking: ${message}. The role is: ${role}`;
                         console.log('Prompt for AI:', prompt);
 
-                        const response = await hfInference.textGeneration({
+                        let fullResponse = '';
+                        for await (const chunk of hfInference.chatCompletionStream({
                             model: "mistralai/Mistral-Nemo-Instruct-2407",
-                            inputs: prompt,
-                            parameters: { max_new_tokens: 50 }
-                        });
+                            messages: [{ role: "user", content: prompt }],
+                            max_tokens: 500,
+                        })) {
+                            fullResponse += chunk.choices[0]?.delta?.content || "";
+                        }
 
-                        const fullResponse = response.generated_text;
                         console.log('Response from AI:', fullResponse);
                         res.json({ response: fullResponse });
                     } catch (parseError) {
