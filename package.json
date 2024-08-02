@@ -1,17 +1,13 @@
 {
-  "name": "apex-chatbot",
+  "name": "role-checker",
   "version": "1.0.0",
-  "description": "Node.js server for Oracle APEX chatbot using Hugging Face Gemma-2b model",
+  "description": "A server to check user roles from APEX API and respond using Hugging Face AI",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
-    "express": "^4.18.2",
-    "https": "^1.0.0",
-    "body-parser": "^1.20.2",
-    "node-fetch": "^2.6.7"
-  },
-  "author": "",
-  "license": "ISC"
+    "@huggingface/inference": "^1.1.1",
+    "express": "^4.17.1"
+  }
 }
