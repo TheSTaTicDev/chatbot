@@ -1,95 +1,87 @@
 const express = require('express');
 const https = require('https');
-const fetch = require('node-fetch'); // Ensure this is installed
+const { HfInference } = require('@huggingface/inference');
 
 const app = express();
 const port = process.env.PORT || 3000;
 
-const hfApiUrl = "https://api-inference.huggingface.co/models/google/gemma-2-2b";
-const hfApiKey = "Bearer PRacYXZxrVezoLRauaKdbYogWVvJJkeFUk"; // Replace with your Hugging Face API key
+const hfInference = new HfInference("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");
 
-app.use(express.json()); // This middleware parses JSON payloads
-
-async function query(data) {
-    try {
-        const response = await fetch(hfApiUrl, {
-            headers: {
-                "Authorization": hfApiKey,
-                "Content-Type": "application/json",
-            },
-            method: "POST",
-            body: JSON.stringify(data),
-        });
-
-        if (!response.ok) {
-            throw new Error(`Hugging Face API request failed with status ${response.status}: ${response.statusText}`);
-        }
-
-        const result = await response.json();
-        return result;
-    } catch (error) {
-        console.error('Error querying Hugging Face API:', error);
-        throw error;
-    }
-}
+app.use(express.json()); // Middleware to parse JSON payloads
 
 app.post('/get-role', async (req, res) => {
     const { userEmail, message } = req.body;
     console.log(`Received request - userEmail: ${userEmail}, message: ${message}`);
 
-    if (userEmail && message) {
-        if (message.toLowerCase().includes('role')) {
-            console.log('Fetching role from APEX API');
-            try {
-                const apexApiUrl = `https://apex.oracle.com/pls/apex/new_api/user_roles/user/${userEmail}`;
+    if (!userEmail || !message) {
+        console.error('Invalid request payload: Missing userEmail or message');
+        return res.status(400).json({ error: 'Invalid request payload' });
+    }
+
+    if (message.toLowerCase().includes('role')) {
+        console.log('Fetching role from APEX API');
+        try {
+            const apexApiUrl = `https://apex.oracle.com/pls/apex/new_api/user_roles/user/${userEmail}`;
+            console.log(`APEX API URL: ${apexApiUrl}`);
+            
+            https.get(apexApiUrl, (resp) => {
+                let data = '';
                 
-                https.get(apexApiUrl, (resp) => {
-                    let data = '';
-
-                    resp.on('data', (chunk) => {
-                        data += chunk;
-                    });
-
-                    resp.on('end', async () => {
-                        try {
-                            const roleData = JSON.parse(data);
-                            const role = roleData.items[0]?.r_name; // Extracting the role name
-
-                            if (!role) {
-                                throw new Error('Role not found in APEX API response');
-                            }
-
-                            const prompt = `User with email ${userEmail} is asking: ${message}. The role is: ${role}`;
-                            console.log(`Generated prompt: ${prompt}`);
-
-                            const response = await query({ inputs: prompt });
-                            const fullResponse = response.generated_text;
-
-                            console.log(`Received response from Hugging Face API: ${fullResponse}`);
-                            res.json({ response: fullResponse });
-                        } catch (parseError) {
-                            console.error('Error parsing JSON from APEX API:', parseError);
-                            res.status(500).json({ error: 'Failed to parse role data' });
-                        }
-                    });
-
-                }).on("error", (err) => {
-                    console.error("Error fetching role from APEX API:", err.message);
-                    res.status(500).json({ error: 'Failed to fetch role from APEX API' });
+                resp.on('data', (chunk) => {
+                    console.log('Received data chunk from APEX API:', chunk.toString());
+                    data += chunk;
                 });
 
-            } catch (error) {
-                console.error('Error in processing request:', error.message);
-                res.status(500).json({ error: 'Failed to process request' });
-            }
-        } else {
-            const defaultMessage = 'This chatbot only responds to queries about your role.';
-            console.log(`Default message: ${defaultMessage}`);
-            res.json({ response: defaultMessage });
+                resp.on('end', async () => {
+                    console.log('Completed receiving data from APEX API');
+                    try {
+                        const roleData = JSON.parse(data);
+
+                        const role = roleData.items[0]?.r_name; // Extracting the role name
+                        if (!role) {
+                            console.error('Role data not found for the user:', userEmail);
+                            return res.status(404).json({ error: 'Role not found' });
+                        }
+                        
+                        const prompt = `User with email ${userEmail} is asking: ${message}. The role is: ${role}`;
+                        console.log('Prompt for AI:', prompt);
+
+                        // Using textGeneration as an alternative
+                        try {
+                            const response = await hf.questionAnswering({
+                                   model: 'deepset/roberta-base-squad2',
+                                   inputs: {
+                                   question: 'What is my role?',
+                                   context: prompt
+                                   }
+                            });
+
+                            const fullResponse = response.generated_text;
+                            console.log('Response from AI:', fullResponse);
+                            res.json({ response: fullResponse });
+                        } catch (aiError) {
+                            console.error('Error calling Hugging Face AI model:', aiError);
+                            res.status(500).json({ error: 'Failed to get response from AI model' });
+                        }
+                    } catch (parseError) {
+                        console.error('Error parsing JSON from APEX API:', parseError);
+                        res.status(500).json({ error: 'Failed to parse role data' });
+                    }
+                });
+
+            }).on("error", (err) => {
+                console.error("Error fetching role from APEX API:", err.message);
+                res.status(500).json({ error: 'Failed to fetch role from APEX API' });
+            });
+
+        } catch (error) {
+            console.error('Error in processing request:', error.message);
+            res.status(500).json({ error: 'Failed to process request' });
         }
     } else {
-        console.error('Invalid request payload');
-        res.status(400).json({ error: 'Invalid request payload' });
+        const defaultMessage = 'This chatbot only responds to queries about your role.';
+        console.log('Non-role query received:', message);
+        res.json({ response: defaultMessage });
     }
 });
 
