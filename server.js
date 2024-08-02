@@ -1,6 +1,6 @@
 const express = require('express');
 const https = require('https');
-const { HfInference } = require('@huggingface/inference');
+import { HfInference } from "https://esm.sh/@huggingface/inference"
 
 const app = express();
 const port = process.env.PORT || 3000;
