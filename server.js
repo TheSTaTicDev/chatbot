@@ -13,6 +13,11 @@ app.post('/get-role', async (req, res) => {
     const { userEmail, message } = req.body;
     console.log(`Received request - userEmail: ${userEmail}, message: ${message}`);
 
+    if (!userEmail || !message) {
+        console.error('Missing userEmail or message in request body');
+        return res.status(400).json({ error: 'Missing userEmail or message in request body' });
+    }
+
     if (message.toLowerCase().includes('my role')) {
         console.log('Fetching role from APEX API');
         try {
@@ -36,10 +41,9 @@ app.post('/get-role', async (req, res) => {
                         const role = roleData.items[0]?.r_name; // Extracting the role name
                         console.log(`Role for user ${userEmail}: ${role}`);
 
-                        const prompt = `Provide a friendly message to the User with email ${userEmail} is asking:${message}. The role is: ${role}. Do not greet with name just inform them about their role in the app.`;
+                        const prompt = `User with email ${userEmail} is asking: ${message}. The role is: ${role}`;
                         console.log('Prompt for AI:', prompt);
 
-                        // Using HfInference to generate text
                         const response = await hfInference.textGeneration({
                             model: "mistralai/Mistral-Nemo-Instruct-2407",
                             inputs: prompt,
