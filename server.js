@@ -40,7 +40,7 @@ app.post('/get-role', async (req, res) => {
                         const role = roleData.items[0]?.r_name; // Extracting the role name
                         if (!role) {
                             console.error('Role data not found for the user:', userEmail);
-                            return res.status(404).json({ error: 'Role not found' });
+                            return res.json({ response: 'Error finding role for the current user!' });
                         }
 
                         const prompt = `The role of the user with email ${userEmail} is: ${role}`;
