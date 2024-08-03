@@ -20,33 +20,8 @@ app.post('/get-role', async (req, res) => {
 
     if (message.toLowerCase().includes('role')) {
         console.log('Fetching role from APEX API');
-        try {
                         const prompt = `The role of the user with email ${userEmail} is: Student`;
                         res.json({ response: prompt });
-                        
-                        // Using textGeneration as an alternative
-                        // try {
-                        //     const response = await hf.summarization({
-                        //               model: 'facebook/bart-large-cnn',
-                        //               inputs: prompt,
-                        //               parameters: {
-                        //               max_length: 100
-                        //               }
-                        //     })
-
-                        //     const fullResponse = response.generated_text;
-                        //     console.log('Response from AI:', fullResponse);
-                        //     res.json({ response: fullResponse });
-                        // } catch (aiError) {
-                        //     console.error('Error calling Hugging Face AI model:', aiError);
-                        //     res.status(500).json({ error: 'Failed to get response from AI model' });
-                        // }
-                        
-                    } catch (parseError) {
-                        console.error('Error parsing JSON from APEX API:', parseError);
-                        res.status(500).json({ error: 'Failed to parse role data' });
-                    }
-                });
 
             }).on("error", (err) => {
                 console.error("Error fetching role from APEX API:", err.message);
