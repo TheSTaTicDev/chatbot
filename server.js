@@ -21,29 +21,7 @@ app.post('/get-role', async (req, res) => {
     if (message.toLowerCase().includes('role')) {
         console.log('Fetching role from APEX API');
         try {
-            const apexApiUrl = `https://apex.oracle.com/pls/apex/new_api/user_roles/user/${userEmail}`;
-            console.log(`APEX API URL: ${apexApiUrl}`);
-            
-            https.get(apexApiUrl, (resp) => {
-                let data = '';
-                
-                resp.on('data', (chunk) => {
-                    console.log('Received data chunk from APEX API:', chunk.toString());
-                    data += chunk;
-                });
-
-                resp.on('end', async () => {
-                    console.log('Completed receiving data from APEX API');
-                    try {
-                        const roleData = JSON.parse(data);
-
-                        const role = roleData.items[0]?.r_name; // Extracting the role name
-                        if (!role) {
-                            console.error('Role data not found for the user:', userEmail);
-                            return res.json({ response: 'Error finding role for the current user!' });
-                        }
-
-                        const prompt = `The role of the user with email ${userEmail} is: ${role}`;
+                        const prompt = `The role of the user with email ${userEmail} is: Student`;
                         res.json({ response: prompt });
                         
                         // Using textGeneration as an alternative
