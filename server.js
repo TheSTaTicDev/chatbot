@@ -36,7 +36,6 @@ app.post('/get-role', async (req, res) => {
                     console.log('Completed receiving data from APEX API');
                     try {
                         const roleData = JSON.parse(data);
-                        console.log('Parsed role data:', roleData);
 
                         const role = roleData.items[0]?.r_name; // Extracting the role name
                         if (!role) {
@@ -45,25 +44,26 @@ app.post('/get-role', async (req, res) => {
                         }
 
                         const prompt = `The role of the user with email ${userEmail} is: ${role}`;
-                        console.log('Prompt for AI:', prompt);
-
+                        res.json({ response: prompt });
+                        
                         // Using textGeneration as an alternative
-                        try {
-                            const response = await hf.summarization({
-                                      model: 'facebook/bart-large-cnn',
-                                      inputs: prompt,
-                                      parameters: {
-                                      max_length: 100
-                                      }
-                            })
+                        // try {
+                        //     const response = await hf.summarization({
+                        //               model: 'facebook/bart-large-cnn',
+                        //               inputs: prompt,
+                        //               parameters: {
+                        //               max_length: 100
+                        //               }
+                        //     })
 
-                            const fullResponse = response.generated_text;
-                            console.log('Response from AI:', fullResponse);
-                            res.json({ response: fullResponse });
-                        } catch (aiError) {
-                            console.error('Error calling Hugging Face AI model:', aiError);
-                            res.status(500).json({ error: 'Failed to get response from AI model' });
-                        }
+                        //     const fullResponse = response.generated_text;
+                        //     console.log('Response from AI:', fullResponse);
+                        //     res.json({ response: fullResponse });
+                        // } catch (aiError) {
+                        //     console.error('Error calling Hugging Face AI model:', aiError);
+                        //     res.status(500).json({ error: 'Failed to get response from AI model' });
+                        // }
+                        
                     } catch (parseError) {
                         console.error('Error parsing JSON from APEX API:', parseError);
                         res.status(500).json({ error: 'Failed to parse role data' });
