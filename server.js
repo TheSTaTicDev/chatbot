@@ -1,11 +1,11 @@
 const express = require('express');
 const https = require('https');
-import { HfInference } from "https://esm.sh/@huggingface/inference"
+const { HfInference } = require('@huggingface/inference');
 
 const app = express();
 const port = process.env.PORT || 3000;
 
-const hfInference = new HfInference("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");
+const hf = new HfInference("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");
 
 app.use(express.json()); // Middleware to parse JSON payloads
 
@@ -36,25 +36,26 @@ app.post('/get-role', async (req, res) => {
                     console.log('Completed receiving data from APEX API');
                     try {
                         const roleData = JSON.parse(data);
+                        console.log('Parsed role data:', roleData);
 
                         const role = roleData.items[0]?.r_name; // Extracting the role name
                         if (!role) {
                             console.error('Role data not found for the user:', userEmail);
                             return res.status(404).json({ error: 'Role not found' });
                         }
-                        
-                        const prompt = `User with email ${userEmail} is asking: ${message}. The role is: ${role}`;
+
+                        const prompt = `The role of the user with email ${userEmail} is: ${role}`;
                         console.log('Prompt for AI:', prompt);
 
                         // Using textGeneration as an alternative
                         try {
-                            const response = await hfInference.questionAnswering({
-                                   model: 'deepset/roberta-base-squad2',
-                                   inputs: {
-                                   question: 'What is my role?',
-                                   context: prompt
-                                   }
-                            });
+                            const response = await hf.summarization({
+                                      model: 'facebook/bart-large-cnn',
+                                      inputs: prompt,
+                                      parameters: {
+                                      max_length: 100
+                                      }
+                            })
 
                             const fullResponse = response.generated_text;
                             console.log('Response from AI:', fullResponse);
