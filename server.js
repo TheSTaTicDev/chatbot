@@ -102,7 +102,7 @@ app.use(cors());
 app.post("/get-role", async (req, res) => {
   const { userEmail, message } = req.body;
   console.log(
-    Received request - userEmail: ${userEmail}, message: ${message}
+    `Received request - userEmail: ${userEmail}, message: ${message}`
   );
 
   if (!userEmail || !message) {
